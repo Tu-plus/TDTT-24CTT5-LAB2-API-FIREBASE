@@ -304,11 +304,15 @@ _auth_component = components.declare_component(
 controller = CookieController()
 
 # ── Session state ─────────────────────────────────────────────────────────────
-for key in ["user", "id_token", "tasks", "show_add"]:
+for key in ["user", "id_token", "tasks", "show_add", "edit_task_id"]:
     if key not in st.session_state:
-        st.session_state[key] = None if key != "show_add" else False
+        st.session_state[key] = None if key not in ["show_add"] else False
 if st.session_state.tasks is None:
     st.session_state.tasks = []
+
+# Create a global session for connection pooling
+if "http_session" not in st.session_state:
+    st.session_state.http_session = requests.Session()
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def api(method, path, **kwargs):
@@ -317,7 +321,8 @@ def api(method, path, **kwargs):
         headers["Authorization"] = f"Bearer {st.session_state.id_token}"
     url = f"{BACKEND_URL}{path}"
     try:
-        resp = getattr(requests, method)(url, headers=headers, timeout=10, **kwargs)
+        session = st.session_state.http_session
+        resp = getattr(session, method)(url, headers=headers, timeout=10, **kwargs)
         return resp
     except Exception as e:
         st.error(f"Không kết nối được backend: {e}")
@@ -494,23 +499,29 @@ else:
     with col_logout:
         if st.button("🚪", use_container_width=True, help="Đăng xuất"):
             controller.remove('auth_token')
-            for k in ["user", "id_token", "tasks", "show_add"]:
-                st.session_state[k] = None if k != "show_add" else False
+            for k in ["user", "id_token", "tasks", "show_add", "edit_task_id"]:
+                st.session_state[k] = None if k not in ["show_add"] else False
             st.session_state.tasks = []
             st.rerun()
 
     if st.session_state.show_add:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown('<p class="section-title">✏️ Task mới</p>', unsafe_allow_html=True)
         title = st.text_input("Tiêu đề *", placeholder="Ví dụ: Ôn thi môn Toán")
         desc  = st.text_area("Mô tả (tuỳ chọn)", placeholder="Thêm ghi chú...", height=80)
-        priority = st.selectbox("Mức độ ưu tiên", ["medium", "high", "low"],
-                                format_func=lambda x: {"high": "🔴 Cao", "medium": "🟠 Trung bình", "low": "🟢 Thấp"}[x])
+        c_pri, c_date = st.columns(2)
+        with c_pri:
+            priority = st.selectbox("Mức độ ưu tiên", ["medium", "high", "low"],
+                                    format_func=lambda x: {"high": "🔴 Cao", "medium": "🟠 Trung bình", "low": "🟢 Thấp"}[x])
+        with c_date:
+            deadline = st.date_input("Hạn chót (tuỳ chọn)", value=None)
         c1, c2 = st.columns(2)
         with c1:
             if st.button("✅ Tạo task", type="primary", use_container_width=True):
                 if title.strip():
-                    resp = api("post", "/tasks/", json={"title": title.strip(), "description": desc.strip(), "priority": priority})
+                    payload = {"title": title.strip(), "description": desc.strip(), "priority": priority}
+                    if deadline:
+                        payload["deadline"] = deadline.isoformat()
+                    resp = api("post", "/tasks/", json=payload)
                     if resp and resp.status_code == 200:
                         st.success("Đã thêm task!")
                         st.session_state.show_add = False
@@ -524,7 +535,6 @@ else:
             if st.button("Huỷ", use_container_width=True):
                 st.session_state.show_add = False
                 st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Filter ──
     filter_opt = st.selectbox("Lọc:", ["Tất cả", "Chưa xong", "Hoàn thành"], label_visibility="collapsed")
@@ -559,6 +569,51 @@ else:
             priority  = task.get("priority", "medium")
             created   = format_date(task.get("created_at", ""))
 
+            # Handle Edit Mode
+            if st.session_state.get("edit_task_id") == tid:
+                edit_title = st.text_input("Tiêu đề", value=task["title"], key=f"edit_title_{tid}")
+                edit_desc = st.text_area("Mô tả", value=task.get("description", ""), key=f"edit_desc_{tid}", height=80)
+                
+                c_pri, c_date = st.columns(2)
+                with c_pri:
+                    idx = ["medium", "high", "low"].index(priority) if priority in ["medium", "high", "low"] else 0
+                    edit_prio = st.selectbox("Mức độ ưu tiên", ["medium", "high", "low"], index=idx,
+                                             format_func=lambda x: {"high": "🔴 Cao", "medium": "🟠 Trung bình", "low": "🟢 Thấp"}[x],
+                                             key=f"edit_prio_{tid}")
+                with c_date:
+                    default_date = None
+                    if task.get("deadline"):
+                        try:
+                            default_date = datetime.fromisoformat(task["deadline"].replace("Z", "+00:00")).date()
+                        except:
+                            pass
+                    edit_date = st.date_input("Hạn chót", value=default_date, key=f"edit_date_{tid}")
+                
+                c_save, c_cancel = st.columns(2)
+                with c_save:
+                    if st.button("💾 Lưu", key=f"save_{tid}", type="primary", use_container_width=True):
+                        if edit_title.strip():
+                            payload = {
+                                "title": edit_title.strip(),
+                                "description": edit_desc.strip(),
+                                "priority": edit_prio,
+                                "deadline": edit_date.isoformat() if edit_date else ""
+                            }
+                            resp = api("patch", f"/tasks/{tid}", json=payload)
+                            if resp and resp.status_code == 200:
+                                st.session_state.edit_task_id = None
+                                for t in st.session_state.tasks:
+                                    if t["id"] == tid:
+                                        t.update(payload)
+                                st.rerun()
+                        else:
+                            st.warning("Tiêu đề không được để trống")
+                with c_cancel:
+                    if st.button("Huỷ", key=f"cancel_{tid}", use_container_width=True):
+                        st.session_state.edit_task_id = None
+                        st.rerun()
+                continue
+
             done_cls  = "done" if completed else ""
             title_cls = "done-text" if completed else ""
 
@@ -567,6 +622,15 @@ else:
                 safe_desc = str(task["description"]).replace('\n', '<br>')
                 desc_html = f"<div class='task-desc'>{safe_desc}</div>"
 
+            deadline_html = ""
+            if task.get("deadline"):
+                try:
+                    d_dt = datetime.fromisoformat(task["deadline"].replace("Z", "+00:00"))
+                    d_str = d_dt.strftime("%d/%m/%Y")
+                    deadline_html = f'<span class="task-date" style="color: #ef4444; margin-left: 10px;">⏳ Hạn: {d_str}</span>'
+                except:
+                    pass
+
             html_str = f"""
             <div class="task-item {done_cls}">
                 <div class="task-title {title_cls}">{task["title"]}</div>
@@ -574,12 +638,13 @@ else:
                 <div class="task-meta">
                     {priority_badge(priority)}
                     <span class="task-date">{created}</span>
+                    {deadline_html}
                 </div>
             </div>
             """
             st.markdown(html_str.replace('\n', ''), unsafe_allow_html=True)
 
-            c1, c2, c3 = st.columns([2, 1, 1])
+            c1, c2, c3 = st.columns([4, 3, 3])
             with c1:
                 label = "☑ Bỏ hoàn thành" if completed else "✅ Đánh dấu xong"
                 if st.button(label, key=f"done_{tid}", use_container_width=True):
@@ -589,6 +654,10 @@ else:
                             if t["id"] == tid:
                                 t["completed"] = not completed
                         st.rerun()
+            with c2:
+                if st.button("✏️ Sửa", key=f"edit_{tid}", use_container_width=True):
+                    st.session_state.edit_task_id = tid
+                    st.rerun()
             with c3:
                 if st.button("🗑 Xoá", key=f"del_{tid}", use_container_width=True):
                     resp = api("delete", f"/tasks/{tid}")

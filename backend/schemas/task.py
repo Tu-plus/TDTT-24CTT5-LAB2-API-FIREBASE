@@ -13,6 +13,7 @@ class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = ""
     priority: Priority = Priority.medium
+    deadline: Optional[str] = None
 
 
 class TaskUpdate(BaseModel):
@@ -20,3 +21,4 @@ class TaskUpdate(BaseModel):
     description: Optional[str] = None
     priority: Optional[Priority] = None
     completed: Optional[bool] = None
+    deadline: Optional[str] = None

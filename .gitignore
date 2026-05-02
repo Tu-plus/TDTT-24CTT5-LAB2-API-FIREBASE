@@ -23,3 +23,10 @@ build/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# IDEs/Editors
+.vscode/
+.idea/
+
+# Logs
+*.log

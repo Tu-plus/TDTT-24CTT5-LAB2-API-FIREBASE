@@ -23,6 +23,7 @@ def create_task(task: TaskCreate, user: dict = Depends(get_current_user)):
         "title": task.title,
         "description": task.description,
         "priority": task.priority.value,
+        "deadline": task.deadline,
         "completed": False,
         "uid": uid,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -77,9 +78,9 @@ def update_task(task_id: str, update: TaskUpdate, user: dict = Depends(get_curre
         update_data["priority"] = update_data["priority"].value
 
     doc_ref.update(update_data)
-    updated = doc_ref.get().to_dict()
-    updated["id"] = task_id
-    return updated
+    task_data.update(update_data)
+    task_data["id"] = task_id
+    return task_data
 
 
 @router.delete("/{task_id}")
