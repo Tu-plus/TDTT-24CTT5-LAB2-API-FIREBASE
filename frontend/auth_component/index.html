@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Google Login Component</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500&display=swap');
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Sora', sans-serif;
+    }
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      max-width: 400px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .google-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+    .google-btn img {
+      width: 20px;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <button id="google-login-btn" class="google-btn">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
+    Đăng nhập bằng Google
+  </button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    let app;
+    let auth;
+    let provider;
+
+    // --- Streamlit component communication ---
+    function sendMessageToStreamlitClient(type, data) {
+      const outData = Object.assign({
+        isStreamlitMessage: true,
+        type: type,
+      }, data);
+      window.parent.postMessage(outData, "*");
+    }
+
+    function Streamlit_setComponentValue(value) {
+      sendMessageToStreamlitClient("streamlit:setComponentValue", {value: value});
+    }
+
+    function Streamlit_setFrameHeight(height) {
+      sendMessageToStreamlitClient("streamlit:setFrameHeight", {height: height});
+    }
+
+    window.addEventListener("message", function(event) {
+      if (event.data.type === "streamlit:render") {
+        const args = event.data.args;
+        
+        // Initialize Firebase when config is passed
+        if (args.config && !app) {
+          app = initializeApp(args.config);
+          auth = getAuth(app);
+          provider = new GoogleAuthProvider();
+        }
+        
+        // Adjust height
+        Streamlit_setFrameHeight(document.body.scrollHeight || 50);
+      }
+    });
+
+    sendMessageToStreamlitClient("streamlit:componentReady", {apiVersion: 1});
+
+    // --- Handle Click ---
+    document.getElementById('google-login-btn').addEventListener('click', async () => {
+      if (!auth) {
+        console.error("Firebase not initialized yet.");
+        return;
+      }
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const idToken = await result.user.getIdToken();
+        // Send back the ID token to Streamlit
+        Streamlit_setComponentValue({ token: idToken });
+      } catch (error) {
+        console.error("Google Sign-in error:", error);
+        Streamlit_setComponentValue({ error: error.message });
+      }
+    });
+  </script>
+</body>
+</html>
