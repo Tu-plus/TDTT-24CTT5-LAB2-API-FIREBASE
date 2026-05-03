@@ -9,7 +9,7 @@ from datetime import datetime
 from streamlit_cookies_controller import CookieController
 
 # ── Page config ──────────────────────────────────────────────────────────────
-favicon_path = os.path.join(os.path.dirname(__file__), "favicon.png")
+favicon_path = os.path.join(os.path.dirname(__file__), "assets", "favicon.png")
 icon = Image.open(favicon_path) if os.path.exists(favicon_path) else "✅"
 
 st.set_page_config(
@@ -336,7 +336,7 @@ def load_tasks():
 def format_date(iso_str):
     try:
         dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
-        return dt.strftime("%d/%m %H:%M")
+        return dt.astimezone().strftime("%d/%m %H:%M")
     except:
         return ""
 
@@ -357,7 +357,7 @@ if not st.session_state.user and cookie_token:
         controller.remove('auth_token')
 
 # ── Hero ─────────────────────────────────────────────────────────────────────
-logo_path = os.path.join(os.path.dirname(__file__), "logo.png")
+logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.png")
 if os.path.exists(logo_path):
     col1, col2, col3 = st.columns([1, 4, 1])
     with col2:
@@ -508,19 +508,24 @@ else:
         st.markdown('<p class="section-title">✏️ Task mới</p>', unsafe_allow_html=True)
         title = st.text_input("Tiêu đề *", placeholder="Ví dụ: Ôn thi môn Toán")
         desc  = st.text_area("Mô tả (tuỳ chọn)", placeholder="Thêm ghi chú...", height=80)
-        c_pri, c_date = st.columns(2)
+        c_pri, c_date, c_time = st.columns([2, 1.5, 1.5])
         with c_pri:
             priority = st.selectbox("Mức độ ưu tiên", ["medium", "high", "low"],
                                     format_func=lambda x: {"high": "🔴 Cao", "medium": "🟠 Trung bình", "low": "🟢 Thấp"}[x])
         with c_date:
-            deadline = st.date_input("Hạn chót (tuỳ chọn)", value=None)
+            deadline_date = st.date_input("Hạn chót (ngày)", value=None)
+        with c_time:
+            deadline_time = st.time_input("Giờ", value=None)
         c1, c2 = st.columns(2)
         with c1:
             if st.button("✅ Tạo task", type="primary", use_container_width=True):
                 if title.strip():
                     payload = {"title": title.strip(), "description": desc.strip(), "priority": priority}
-                    if deadline:
-                        payload["deadline"] = deadline.isoformat()
+                    if deadline_date:
+                        if deadline_time:
+                            payload["deadline"] = datetime.combine(deadline_date, deadline_time).isoformat()
+                        else:
+                            payload["deadline"] = deadline_date.isoformat()
                     resp = api("post", "/tasks/", json=payload)
                     if resp and resp.status_code == 200:
                         st.success("Đã thêm task!")
@@ -536,8 +541,12 @@ else:
                 st.session_state.show_add = False
                 st.rerun()
 
-    # ── Filter ──
-    filter_opt = st.selectbox("Lọc:", ["Tất cả", "Chưa xong", "Hoàn thành"], label_visibility="collapsed")
+    # ── Filter and Sort ──
+    c_filter, c_sort = st.columns(2)
+    with c_filter:
+        filter_opt = st.selectbox("Lọc trạng thái:", ["Tất cả", "Chưa xong", "Hoàn thành"])
+    with c_sort:
+        sort_opt = st.selectbox("Sắp xếp theo:", ["Mức độ ưu tiên", "Hạn chót gần nhất"])
 
     filtered = tasks.copy()
     if filter_opt == "Chưa xong":
@@ -545,13 +554,22 @@ else:
     elif filter_opt == "Hoàn thành":
         filtered = [t for t in filtered if t.get("completed")]
 
-    # Sort tasks: created_at descending -> priority -> completed
+    # Sort tasks: created_at descending -> user choice -> completed
     priority_map = {"high": 1, "medium": 2, "low": 3}
     filtered.sort(key=lambda x: x.get("created_at", ""), reverse=True)
-    filtered.sort(key=lambda x: (
-        x.get("completed", False),
-        priority_map.get(x.get("priority", "medium"), 2)
-    ))
+    
+    if sort_opt == "Mức độ ưu tiên":
+        filtered.sort(key=lambda x: (
+            x.get("completed", False),
+            priority_map.get(x.get("priority", "medium"), 2),
+            x.get("deadline") or "9999-12-31"
+        ))
+    else: # Hạn chót gần nhất
+        filtered.sort(key=lambda x: (
+            x.get("completed", False),
+            x.get("deadline") or "9999-12-31",
+            priority_map.get(x.get("priority", "medium"), 2)
+        ))
 
     # ── Task list ──
     if not filtered:
@@ -574,7 +592,7 @@ else:
                 edit_title = st.text_input("Tiêu đề", value=task["title"], key=f"edit_title_{tid}")
                 edit_desc = st.text_area("Mô tả", value=task.get("description", ""), key=f"edit_desc_{tid}", height=80)
                 
-                c_pri, c_date = st.columns(2)
+                c_pri, c_date, c_time = st.columns([2, 1.5, 1.5])
                 with c_pri:
                     idx = ["medium", "high", "low"].index(priority) if priority in ["medium", "high", "low"] else 0
                     edit_prio = st.selectbox("Mức độ ưu tiên", ["medium", "high", "low"], index=idx,
@@ -582,12 +600,18 @@ else:
                                              key=f"edit_prio_{tid}")
                 with c_date:
                     default_date = None
+                    default_time = None
                     if task.get("deadline"):
                         try:
-                            default_date = datetime.fromisoformat(task["deadline"].replace("Z", "+00:00")).date()
+                            d_dt = datetime.fromisoformat(task["deadline"].replace("Z", "+00:00"))
+                            default_date = d_dt.date()
+                            if "T" in task["deadline"]:
+                                default_time = d_dt.time()
                         except:
                             pass
-                    edit_date = st.date_input("Hạn chót", value=default_date, key=f"edit_date_{tid}")
+                    edit_date = st.date_input("Hạn chót (ngày)", value=default_date, key=f"edit_date_{tid}")
+                with c_time:
+                    edit_time = st.time_input("Giờ", value=default_time, key=f"edit_time_{tid}")
                 
                 c_save, c_cancel = st.columns(2)
                 with c_save:
@@ -597,8 +621,15 @@ else:
                                 "title": edit_title.strip(),
                                 "description": edit_desc.strip(),
                                 "priority": edit_prio,
-                                "deadline": edit_date.isoformat() if edit_date else ""
                             }
+                            if edit_date:
+                                if edit_time:
+                                    payload["deadline"] = datetime.combine(edit_date, edit_time).isoformat()
+                                else:
+                                    payload["deadline"] = edit_date.isoformat()
+                            else:
+                                payload["deadline"] = ""
+                            
                             resp = api("patch", f"/tasks/{tid}", json=payload)
                             if resp and resp.status_code == 200:
                                 st.session_state.edit_task_id = None
@@ -626,7 +657,10 @@ else:
             if task.get("deadline"):
                 try:
                     d_dt = datetime.fromisoformat(task["deadline"].replace("Z", "+00:00"))
-                    d_str = d_dt.strftime("%d/%m/%Y")
+                    if "T" in task["deadline"]:
+                        d_str = d_dt.strftime("%d/%m/%Y %H:%M")
+                    else:
+                        d_str = d_dt.strftime("%d/%m/%Y")
                     deadline_html = f'<span class="task-date" style="color: #ef4444; margin-left: 10px;">⏳ Hạn: {d_str}</span>'
                 except:
                     pass

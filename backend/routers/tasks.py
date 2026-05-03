@@ -48,11 +48,12 @@ def get_tasks(user: dict = Depends(get_current_user)):
         task["id"] = doc.id
         tasks.append(task)
 
-    # Sort tasks: created_at descending -> priority -> completed
+    # Sort tasks: created_at descending -> priority -> deadline -> completed
     tasks.sort(key=lambda x: x.get("created_at", ""), reverse=True)
     tasks.sort(key=lambda x: (
         x.get("completed", False),
-        {"high": 1, "medium": 2, "low": 3}.get(x.get("priority", "medium"), 2)
+        {"high": 1, "medium": 2, "low": 3}.get(x.get("priority", "medium"), 2),
+        x.get("deadline") or "9999-12-31"
     ))
     return tasks
 
