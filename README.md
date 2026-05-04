@@ -44,6 +44,7 @@
 - 📊 Sắp xếp theo: Mức độ ưu tiên / Hạn chót gần nhất
 
 ### Giao diện
+- 🎭 **2 theme màu sắc**: 🌙 Tối (Dark) · 🌊 Biển (Ocean Blue)
 - 🌙 Dark theme hiện đại với hiệu ứng glassmorphism
 - 📈 Dashboard thống kê: Tổng task / Hoàn thành / Còn lại
 - 👤 User badge hiển thị tên và email
@@ -96,7 +97,9 @@ todo-app/
 ├── frontend/                         # ── FRONTEND (Streamlit) ──────────────
 │   ├── app.py                        # Entry point — Toàn bộ giao diện:
 │   │                                 #   Login/Register, Dashboard, Task CRUD,
-│   │                                 #   Filter/Sort, Stats, Custom CSS
+│   │                                 #   Filter/Sort, Stats, Theme Picker
+│   ├── themes.py                     # Định nghĩa 2 theme (Dark, Ocean Blue)
+│   │                                 #   và hàm generate CSS động theo theme
 │   ├── auth_component/               # Streamlit Custom Component
 │   │   └── index.html                # Giao diện nút "Đăng nhập bằng Google"
 │   │                                 #   Sử dụng Firebase JS SDK (signInWithPopup)

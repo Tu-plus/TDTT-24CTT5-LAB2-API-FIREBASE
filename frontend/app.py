@@ -7,6 +7,7 @@ import os
 from PIL import Image
 from datetime import datetime
 from streamlit_cookies_controller import CookieController
+from themes import THEMES, get_theme_css
 
 # ── Page config ──────────────────────────────────────────────────────────────
 favicon_path = os.path.join(os.path.dirname(__file__), "assets", "favicon.png")
@@ -19,255 +20,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-* { font-family: 'Sora', sans-serif; }
-
-/* Hide Streamlit defaults */
-#MainMenu, footer, header { visibility: hidden; }
-.block-container { padding-top: 2rem; padding-bottom: 2rem; max-width: 720px; }
-
-/* ── Background ── */
-.stApp {
-    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
-    min-height: 100vh;
-}
-
-/* ── Hero header ── */
-.hero {
-    text-align: center;
-    padding: 2.5rem 1rem 1.5rem;
-}
-.hero h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
-    letter-spacing: -1px;
-}
-.hero p {
-    color: #94a3b8;
-    font-size: 1rem;
-    margin-top: 0.4rem;
-}
-
-/* ── Card ── */
-.card {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    backdrop-filter: blur(10px);
-}
-
-/* ── User badge ── */
-.user-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    background: rgba(167,139,250,0.1);
-    border: 1px solid rgba(167,139,250,0.2);
-    border-radius: 12px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1.5rem;
-}
-.user-badge .name {
-    color: #e2e8f0;
-    font-weight: 500;
-    font-size: 0.9rem;
-}
-.user-badge .email {
-    color: #64748b;
-    font-size: 0.75rem;
-}
-.avatar {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #a78bfa, #60a5fa);
-    display: flex; align-items: center; justify-content: center;
-    color: white; font-weight: 700; font-size: 1rem;
-    flex-shrink: 0;
-}
-
-/* ── Stats row ── */
-.stats-row {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-}
-.stat-box {
-    flex: 1;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    padding: 1rem;
-    text-align: center;
-}
-.stat-num {
-    font-size: 1.8rem;
-    font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
-}
-.stat-label {
-    font-size: 0.7rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 0.2rem;
-}
-.stat-total .stat-num { color: #a78bfa; }
-.stat-done .stat-num  { color: #34d399; }
-.stat-left .stat-num  { color: #60a5fa; }
-
-/* ── Task item ── */
-.task-item {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 12px;
-    padding: 1rem 1.2rem;
-    margin-bottom: 0.6rem;
-    transition: border-color 0.2s;
-}
-.task-item:hover { border-color: rgba(167,139,250,0.3); }
-.task-item.done {
-    opacity: 0.5;
-    border-color: rgba(52,211,153,0.2);
-}
-.task-title {
-    color: #e2e8f0;
-    font-weight: 500;
-    font-size: 0.95rem;
-}
-.task-title.done-text {
-    text-decoration: line-through;
-    color: #64748b;
-}
-.task-desc {
-    color: #64748b;
-    font-size: 0.8rem;
-    margin-top: 0.2rem;
-}
-.task-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-.badge {
-    font-size: 0.65rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 20px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
-.badge-medium { background: rgba(251,146,60,0.15); color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
-.badge-low    { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
-.task-date { color: #475569; font-size: 0.7rem; margin-left: auto; }
-
-/* ── Section title ── */
-.section-title {
-    color: #94a3b8;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin: 1.5rem 0 0.75rem;
-}
-
-/* ── Login form ── */
-.login-box {
-    max-width: 400px;
-    margin: 0 auto;
-}
-.login-title {
-    color: #e2e8f0;
-    font-size: 1.3rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-.login-sub {
-    color: #64748b;
-    font-size: 0.85rem;
-    margin-bottom: 1.5rem;
-}
-.divider {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin: 1rem 0;
-    color: #475569;
-    font-size: 0.8rem;
-}
-.divider::before, .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: rgba(255,255,255,0.08);
-}
-
-/* Streamlit widget overrides */
-.stTextInput > div > div > input,
-.stTextArea > div > div > textarea,
-.stSelectbox > div > div {
-    background: rgba(255,255,255,0.05) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 10px !important;
-    color: #e2e8f0 !important;
-}
-.stTextInput > div > div > input:focus,
-.stTextArea > div > div > textarea:focus {
-    border-color: rgba(167,139,250,0.5) !important;
-    box-shadow: 0 0 0 2px rgba(167,139,250,0.1) !important;
-}
-label { color: #94a3b8 !important; font-size: 0.85rem !important; }
-.stButton > button {
-    border-radius: 10px !important;
-    font-family: 'Sora', sans-serif !important;
-    font-weight: 500 !important;
-    transition: all 0.2s !important;
-}
-.stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #7c3aed, #4f46e5) !important;
-    border: none !important;
-    color: white !important;
-}
-.stButton > button[kind="primary"]:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(124,58,237,0.4) !important;
-}
-.stCheckbox > label { color: #e2e8f0 !important; }
-.stAlert { border-radius: 10px !important; }
-.stTabs [data-baseweb="tab-list"] {
-    background: rgba(255,255,255,0.04);
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.08);
-    gap: 0;
-    display: flex;
-    width: 100%;
-}
-.stTabs [data-baseweb="tab"] {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    color: #64748b;
-    border-radius: 8px;
-    font-weight: 500;
-}
-.stTabs [aria-selected="true"] {
-    background: rgba(167,139,250,0.15) !important;
-    color: #a78bfa !important;
-}
-</style>
-""", unsafe_allow_html=True)
+# ── Dynamic Theme CSS ─────────────────────────────────────────────────────────
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"
+st.markdown(get_theme_css(st.session_state.theme), unsafe_allow_html=True)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
@@ -355,6 +111,18 @@ if not st.session_state.user and cookie_token:
     else:
         st.session_state.id_token = None
         controller.remove('auth_token')
+
+# ── Theme Picker ─────────────────────────────────────────────────────────────
+_, tc1, tc2 = st.columns([7, 1.5, 1.5])
+for col, key in zip([tc1, tc2], ["dark", "ocean"]):
+    with col:
+        is_active = st.session_state.theme == key
+        if st.button(THEMES[key]["name"], key=f"theme_{key}",
+                     use_container_width=True,
+                     type="primary" if is_active else "secondary",
+                     help=f"Đổi sang giao diện {THEMES[key]['name']}"):
+            st.session_state.theme = key
+            st.rerun()
 
 # ── Hero ─────────────────────────────────────────────────────────────────────
 logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.png")
