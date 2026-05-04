@@ -7,6 +7,19 @@
 Ứng dụng quản lý công việc (To-do App) với kiến trúc **Frontend – Backend** tách biệt, sử dụng **FastAPI**, **Streamlit**, **Firebase Authentication** và **Firestore Database**.
 
 ---
+## 🎥 Video Demo
+
+[Video](https://drive.google.com/drive/u/0/folders/1GNJRct1QfleVxWAEcmxk-NHj4L3glUeY)
+
+**Nội dung video demo bao gồm:**
+1. Giới thiệu ứng dụng TaskFlow
+2. Chạy Backend (FastAPI + Uvicorn)
+3. Chạy Frontend (Streamlit)
+4. Đăng nhập bằng Firebase (Email/Password hoặc Google)
+5. Demo feature chính: Thêm / Xem / Sửa / Xoá / Đánh dấu hoàn thành task
+6. Minh họa dữ liệu được lưu và đọc từ Firestore Database
+
+---
 
 ## 📑 Mục lục
 
@@ -311,20 +324,6 @@ streamlit run app.py
 5. Cuộn lên đầu trang, nhấn nút **Authorize 🔒**.
 6. Dán đoạn token vừa copy vào ô **Value** và nhấn **Authorize**.
 7. Bây giờ bạn có thể thực hiện "Try it out" cho tất cả các API khác (như `/tasks/`) mà không bị lỗi `401 Unauthorized`.
-
----
-
-## 🎥 Video Demo
-
-> [Đặt link video demo ở đây]
-
-**Nội dung video demo bao gồm:**
-1. Giới thiệu ứng dụng TaskFlow
-2. Chạy Backend (FastAPI + Uvicorn)
-3. Chạy Frontend (Streamlit)
-4. Đăng nhập bằng Firebase (Email/Password hoặc Google)
-5. Demo feature chính: Thêm / Xem / Sửa / Xoá / Đánh dấu hoàn thành task
-6. Minh họa dữ liệu được lưu và đọc từ Firestore Database
 
 ---
 
