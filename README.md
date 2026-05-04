@@ -94,19 +94,21 @@ todo-app/
 │                                     #   token cho các endpoint yêu cầu auth
 │
 ├── frontend/                         # ── FRONTEND (Streamlit) ──────────────
-│   ├── app.py                        # Entry point — Toàn bộ giao diện:
-│   │                                 #   Login/Register, Dashboard, Task CRUD,
-│   │                                 #   Filter/Sort, Stats, Theme Picker
-│   ├── themes.py                     # Định nghĩa 2 theme (Dark, Ocean Blue)
-│   │                                 #   và hàm generate CSS động theo theme
-│   ├── auth_component/               # Streamlit Custom Component
-│   │   └── index.html                # Giao diện nút "Đăng nhập bằng Google"
-│   │                                 #   Sử dụng Firebase JS SDK (signInWithPopup)
-│   ├── assets/                       # Tài nguyên tĩnh
-│   │   ├── logo.png                  # Logo ứng dụng TaskFlow
-│   │   └── favicon.png               # Favicon hiển thị trên tab trình duyệt
-│   └── .streamlit/
-│       └── config.toml               # Cấu hình Streamlit theme (dark mode)
+│   ├── app.py                        # Entry point — Điều phối các component
+│   ├── config.py                     # Quản lý BACKEND_URL & Firebase config
+│   ├── themes.py                     # Quản lý giao diện CSS (Dark, Ocean, White)
+│   ├── components/                   # [MỚI] Các thành phần giao diện
+│   │   ├── auth_ui.py                # Login/Register tabs, Google login
+│   │   ├── layout.py                 # Hero section, Stats, Theme Picker
+│   │   ├── task_form.py              # Form Thêm/Sửa công việc
+│   │   └── task_item.py              # Hiển thị và hành động trên từng task
+│   ├── utils/                        # [MỚI] Tiện ích và logic bổ trợ
+│   │   ├── api_client.py             # Gọi API với Token xác thực
+│   │   ├── auth_helpers.py           # Khởi tạo Firebase, Auto-login Cookie
+│   │   └── formatters.py             # Định dạng ngày tháng, Priority badges
+│   ├── assets/                       # Chứa ảnh (logo, favicon)
+│   ├── auth_component/               # Custom Google Login component
+│   └── .streamlit/                   # Cấu hình giao diện Streamlit
 │
 ├── requirements.txt                  # Danh sách thư viện Python cần cài
 ├── .env.example                      # Mẫu file biến môi trường
