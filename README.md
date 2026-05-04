@@ -1,4 +1,4 @@
-# ✅ TaskFlow — Ứng dụng Quản lý Công việc
+# TaskFlow — Ứng dụng Quản lý Công việc
 
 > **Bài thực hành số 2 — API & Firebase**  
 > Môn: Tư Duy Tính Toán · Trường ĐH Khoa Học Tự Nhiên TP.HCM  
