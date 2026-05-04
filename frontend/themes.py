@@ -1,4 +1,6 @@
 # ── Theme Definitions & CSS Generator ─────────────────────────────────────────
+import base64
+import os
 
 THEMES = {
     "dark": {
@@ -43,12 +45,58 @@ THEMES = {
         "st1": "#38bdf8", "st2": "#34d399", "st3": "#818cf8",
         "av": "linear-gradient(135deg, #38bdf8, #06b6d4)",
     },
+    "white": {
+        "name": "⚪ Sáng",
+        "bg": "#f8fafc",
+        "hero": "linear-gradient(135deg, #2563eb, #3b82f6, #60a5fa)",
+        "t1": "#000000", "t2": "#1e293b", "t3": "#64748b", "t4": "#94a3b8",
+        "s1": "#ffffff", "s2": "#f1f5f9",
+        "b1": "#e2e8f0", "b2": "#cbd5e1",
+        "bh": "rgba(59,130,246,0.5)",
+        "ac": "#3b82f6",
+        "ac_bg": "rgba(59,130,246,0.1)", "ac_bd": "rgba(59,130,246,0.2)",
+        "ac_f": "rgba(59,130,246,0.5)", "ac_g": "rgba(59,130,246,0.1)",
+        "in_bg": "#ffffff", "in_bd": "#cbd5e1",
+        "dv": "#e2e8f0",
+        "tab_bg": "#f8fafc", "tab_bd": "#e2e8f0",
+        "tab_ac": "rgba(59,130,246,0.1)",
+        "btn": "linear-gradient(135deg, #2563eb, #3b82f6)",
+        "btn_s": "rgba(59,130,246,0.4)",
+        "done_bd": "rgba(52,211,153,0.4)",
+        "st1": "#3b82f6", "st2": "#10b981", "st3": "#6366f1",
+        "av": "linear-gradient(135deg, #2563eb, #3b82f6)",
+    },
 }
+
+
+def get_svg_data_uri(filename):
+    """Read SVG file and return base64 data URI."""
+    filepath = os.path.join(os.path.dirname(__file__), "assets", filename)
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                svg_content = f.read()
+            # Basic cleanup to ensure it works well in CSS
+            b64 = base64.b64encode(svg_content.encode("utf-8")).decode("utf-8")
+            return f"data:image/svg+xml;base64,{b64}"
+        except:
+            return ""
+    return ""
 
 
 def get_theme_css(theme_name="dark"):
     """Generate complete CSS for the given theme."""
     t = THEMES.get(theme_name, THEMES["dark"])
+    
+    # Load icons
+    icons = {
+        "refresh": get_svg_data_uri("refresh.svg"),
+        "logout": get_svg_data_uri("logout.svg"),
+        "done": get_svg_data_uri("done.svg"),
+        "edit": get_svg_data_uri("edit.svg"),
+        "delete": get_svg_data_uri("deletetask.svg"),
+    }
+
     return f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -56,8 +104,12 @@ def get_theme_css(theme_name="dark"):
 * {{ font-family: 'Sora', sans-serif; }}
 
 /* Hide Streamlit defaults */
-#MainMenu, footer, header {{ visibility: hidden; }}
-.block-container {{ padding-top: 2rem; padding-bottom: 2rem; max-width: 720px; }}
+#MainMenu, footer, header, .stAppToolbar, [data-testid="stStatusWidget"] {{ 
+    display: none !important;
+    visibility: hidden !important; 
+}}
+.block-container {{ padding-top: 1rem; padding-bottom: 2rem; max-width: 720px; }}
+
 
 /* ── Background ── */
 .stApp {{
@@ -246,51 +298,164 @@ def get_theme_css(theme_name="dark"):
 /* ── Theme switcher ── */
 .theme-switcher {{
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    background: {t["s2"]};
+    border-radius: 12px;
+    padding: 0.4rem;
+    width: fit-content;
+    margin-left: auto;
+    border: 1px solid {t["b1"]};
 }}
-.theme-btn {{
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    border: 2px solid {t["b1"]};
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem;
+.theme-switcher [data-testid="column"] {{
+    width: 60px !important;
+    flex: none !important;
 }}
-.theme-btn:hover {{ transform: scale(1.15); }}
-.theme-btn.active {{ border-color: {t["ac"]}; box-shadow: 0 0 8px {t["ac_g"]}; }}
+.theme-switcher button {{
+    height: 40px !important;
+    padding: 0 !important;
+    font-size: 1.2rem !important;
+    border-radius: 8px !important;
+}}
+.theme-switcher button[kind="primary"] {{
+    background: {t["ac_bg"]} !important;
+    border: 1px solid {t["ac"]} !important;
+    box-shadow: 0 0 10px {t["ac_g"]} !important;
+}}
+
+
 
 /* Streamlit widget overrides */
-.stTextInput > div > div > input,
-.stTextArea > div > div > textarea,
-.stSelectbox > div > div {{
+div[data-testid="stTextInput"] div[data-baseweb="input"],
+div[data-testid="stTextArea"] div[data-baseweb="textarea"],
+div[data-testid="stSelectbox"] > div > div,
+div[data-testid="stDateInput"] div[data-baseweb="input"],
+div[data-testid="stTimeInput"] > div > div,
+div[data-baseweb="select"] > div,
+[data-baseweb="input"], [data-baseweb="base-input"], [data-baseweb="select"], [data-baseweb="popover"], [data-baseweb="popover"] > div {{
     background: {t["in_bg"]} !important;
+    background-color: {t["in_bg"]} !important;
     border: 1px solid {t["in_bd"]} !important;
     border-radius: 10px !important;
-    color: {t["t1"]} !important;
 }}
+
+
+
+
+[data-baseweb="input"] input, 
+[data-baseweb="textarea"] textarea,
+[data-baseweb="select"] div, 
+[data-baseweb="select"] span,
+[data-testid="stTimeInput"] input {{
+    color: {t["t1"]} !important;
+    -webkit-text-fill-color: {t["t1"]} !important;
+    font-weight: 500 !important;
+}}
+
+
+/* Placeholder styling */
+::placeholder {{
+    color: #94a3b8 !important; /* Light gray (slate-400) */
+    opacity: 0.8 !important;
+    -webkit-text-fill-color: #94a3b8 !important;
+}}
+input::placeholder {{
+    color: #94a3b8 !important;
+    -webkit-text-fill-color: #94a3b8 !important;
+}}
+
 .stTextInput > div > div > input:focus,
-.stTextArea > div > div > textarea:focus {{
+.stTextArea > div > div > textarea:focus,
+.stDateInput > div > div > input:focus,
+.stTimeInput > div > div > input:focus,
+[data-baseweb="input"]:focus-within {{
     border-color: {t["ac_f"]} !important;
     box-shadow: 0 0 0 2px {t["ac_g"]} !important;
 }}
+[data-baseweb="popover"] > div, [data-baseweb="menu"], [data-baseweb="calendar"] {{
+    background: #1a1a2e !important;
+    background-color: #1a1a2e !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+}}
+/* Dark Calendar style for all themes */
+[data-baseweb="calendar"] *, [role="gridcell"] {{
+    background: transparent !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}}
+[data-baseweb="calendar"] [aria-selected="true"], 
+[data-baseweb="calendar"] [aria-selected="true"] * {{
+    background: {t["ac"]} !important;
+    background-color: {t["ac"]} !important;
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}}
+[data-baseweb="calendar"] [aria-disabled="true"] {{
+    opacity: 0.2 !important;
+}}
+
+
+
+
 label {{ color: {t["t2"]} !important; font-size: 0.85rem !important; }}
-.stButton > button {{
+/* Universal secondary button override */
+.stButton > button, 
+button[data-testid*="BaseButton-secondary"],
+.stButton > button[kind="secondary"],
+.stButton > button[kind="primary"] {{
+    height: 38px !important;
+    min-height: 38px !important;
     border-radius: 10px !important;
     font-family: 'Sora', sans-serif !important;
-    font-weight: 500 !important;
     transition: all 0.2s !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}}
+
+.stButton > button[kind="secondary"],
+button[data-testid*="BaseButton-secondary"] {{
+    background: {t["in_bg"]} !important;
+    background-color: {t["in_bg"]} !important;
+    border: 1px solid {t["b1"]} !important;
+    color: {t["t1"]} !important;
+    -webkit-text-fill-color: {t["t1"]} !important;
+    font-weight: 500 !important;
+}}
+
+.stButton > button *, 
+button[data-testid*="BaseButton-secondary"] *,
+button[data-testid="baseButton-secondary"] * {{
+    color: inherit !important;
+    -webkit-text-fill-color: inherit !important;
 }}
 .stButton > button[kind="primary"] {{
     background: {t["btn"]} !important;
     border: none !important;
     color: white !important;
+    -webkit-text-fill-color: white !important;
+    font-weight: 600 !important;
+}}
+
+/* Google Login Button prominence */
+div[data-testid="stVerticalBlock"] > div:has(button[key="google_login_btn"]) button,
+.google-btn-wrapper button {{
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+}}
+
+.stButton > button:hover {{
+    border-color: {t["ac"]} !important;
+    color: {t["ac"]} !important;
+    -webkit-text-fill-color: {t["ac"]} !important;
+    transform: translateY(-1px);
 }}
 .stButton > button[kind="primary"]:hover {{
-    transform: translateY(-1px);
     box-shadow: 0 4px 20px {t["btn_s"]} !important;
+    color: white !important;
+    -webkit-text-fill-color: white !important;
 }}
 .stCheckbox > label {{ color: {t["t1"]} !important; }}
 .stAlert {{ border-radius: 10px !important; }}
@@ -314,5 +479,40 @@ label {{ color: {t["t2"]} !important; font-size: 0.85rem !important; }}
     background: {t["tab_ac"]} !important;
     color: {t["ac"]} !important;
 }}
+
+/* ── Icon Injection ── */
+/* Hide the marker containers entirely so they don't take up space/gaps */
+div.element-container:has([class^="icon-"]) {{
+    display: none !important;
+}}
+
+
+/* Target the container containing the marker and the following button */
+div.element-container:has(.icon-refresh) + div.element-container button,
+div.element-container:has(.icon-logout) + div.element-container button,
+div.element-container:has(.icon-done) + div.element-container button,
+div.element-container:has(.icon-edit) + div.element-container button,
+div.element-container:has(.icon-delete) + div.element-container button {{
+    background-repeat: no-repeat !important;
+    background-position: 10px center !important;
+    background-size: 16px 16px !important;
+    padding-left: 32px !important;
+}}
+
+
+div.element-container:has(.icon-refresh) + div.element-container button {{ background-image: url('{icons["refresh"]}') !important; }}
+div.element-container:has(.icon-logout) + div.element-container button {{ background-image: url('{icons["logout"]}') !important; }}
+div.element-container:has(.icon-done) + div.element-container button {{ background-image: url('{icons["done"]}') !important; }}
+div.element-container:has(.icon-edit) + div.element-container button {{ background-image: url('{icons["edit"]}') !important; }}
+div.element-container:has(.icon-delete) + div.element-container button {{ background-image: url('{icons["delete"]}') !important; }}
+
+/* Adjustments for icons in narrow columns (task list) */
+.stColumn div.element-container button {{
+    font-size: 0.8rem !important;
+    background-size: 14px 14px !important;
+    padding-left: 28px !important;
+}}
+
+
 </style>
 """

@@ -100,7 +100,12 @@ def priority_badge(p):
     return f'<span class="badge badge-{p}">{p}</span>'
 
 # ── Auto-login with Cookies ──
-cookie_token = controller.get('auth_token')
+cookie_token = None
+try:
+    cookie_token = controller.get('auth_token')
+except TypeError:
+    pass
+
 if not st.session_state.user and cookie_token:
     st.session_state.id_token = cookie_token
     resp = api("get", "/auth/me")
@@ -113,16 +118,19 @@ if not st.session_state.user and cookie_token:
         controller.remove('auth_token')
 
 # ── Theme Picker ─────────────────────────────────────────────────────────────
-_, tc1, tc2 = st.columns([7, 1.5, 1.5])
-for col, key in zip([tc1, tc2], ["dark", "ocean"]):
+# ── Theme Picker ─────────────────────────────────────────────────────────────
+st.markdown('<div class="theme-switcher">', unsafe_allow_html=True)
+c1, c2, c3 = st.columns([1, 1, 1])
+for col, key in zip([c1, c2, c3], ["dark", "ocean", "white"]):
     with col:
         is_active = st.session_state.theme == key
-        if st.button(THEMES[key]["name"], key=f"theme_{key}",
+        if st.button(THEMES[key]["name"], key=f"theme_{key}", 
                      use_container_width=True,
-                     type="primary" if is_active else "secondary",
-                     help=f"Đổi sang giao diện {THEMES[key]['name']}"):
+                     type="primary" if is_active else "secondary"):
             st.session_state.theme = key
             st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
+
 
 # ── Hero ─────────────────────────────────────────────────────────────────────
 logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.png")
@@ -180,7 +188,10 @@ if not st.session_state.user:
                         st.warning("Vui lòng nhập đầy đủ thông tin")
 
                 st.markdown('<div class="divider">HOẶC</div>', unsafe_allow_html=True)
+                st.markdown('<div class="google-btn-wrapper">', unsafe_allow_html=True)
                 google_res = _auth_component(config=load_firebase_config(), key="google_login_btn")
+                st.markdown('</div>', unsafe_allow_html=True)
+
                 if google_res:
                     if "token" in google_res:
                         st.session_state.id_token = google_res["token"]
@@ -256,16 +267,18 @@ else:
     """, unsafe_allow_html=True)
 
     # ── Add task form ──
-    col_add, col_refresh, col_logout = st.columns([3, 1, 1])
+    col_add, col_refresh, col_logout = st.columns([2.2, 1.4, 1.4], gap="small")
     with col_add:
         if st.button("＋ Thêm task mới", type="primary", use_container_width=True):
             st.session_state.show_add = not st.session_state.show_add
     with col_refresh:
-        if st.button("🔄", use_container_width=True, help="Làm mới danh sách"):
+        st.markdown('<div class="icon-refresh"></div>', unsafe_allow_html=True)
+        if st.button("Làm mới", use_container_width=True, help="Làm mới danh sách"):
             load_tasks()
             st.rerun()
     with col_logout:
-        if st.button("🚪", use_container_width=True, help="Đăng xuất"):
+        st.markdown('<div class="icon-logout"></div>', unsafe_allow_html=True)
+        if st.button("Đăng xuất", use_container_width=True, help="Đăng xuất"):
             controller.remove('auth_token')
             for k in ["user", "id_token", "tasks", "show_add", "edit_task_id"]:
                 st.session_state[k] = None if k not in ["show_add"] else False
@@ -286,7 +299,7 @@ else:
             deadline_time = st.time_input("Giờ", value=None)
         c1, c2 = st.columns(2)
         with c1:
-            if st.button("✅ Tạo task", type="primary", use_container_width=True):
+            if st.button("Tạo task", type="primary", use_container_width=True):
                 if title.strip():
                     payload = {"title": title.strip(), "description": desc.strip(), "priority": priority}
                     if deadline_date:
@@ -448,7 +461,8 @@ else:
 
             c1, c2, c3 = st.columns([4, 3, 3])
             with c1:
-                label = "☑ Bỏ hoàn thành" if completed else "✅ Đánh dấu xong"
+                label = "Bỏ hoàn thành" if completed else "Đánh dấu xong"
+                st.markdown('<div class="icon-done"></div>', unsafe_allow_html=True)
                 if st.button(label, key=f"done_{tid}", use_container_width=True):
                     resp = api("patch", f"/tasks/{tid}", json={"completed": not completed})
                     if resp and resp.status_code == 200:
@@ -457,11 +471,13 @@ else:
                                 t["completed"] = not completed
                         st.rerun()
             with c2:
-                if st.button("✏️ Sửa", key=f"edit_{tid}", use_container_width=True):
+                st.markdown('<div class="icon-edit"></div>', unsafe_allow_html=True)
+                if st.button("Sửa", key=f"edit_{tid}", use_container_width=True):
                     st.session_state.edit_task_id = tid
                     st.rerun()
             with c3:
-                if st.button("🗑 Xoá", key=f"del_{tid}", use_container_width=True):
+                st.markdown('<div class="icon-delete"></div>', unsafe_allow_html=True)
+                if st.button("Xoá", key=f"del_{tid}", use_container_width=True):
                     resp = api("delete", f"/tasks/{tid}")
                     if resp and resp.status_code == 200:
                         st.session_state.tasks = [t for t in st.session_state.tasks if t["id"] != tid]
