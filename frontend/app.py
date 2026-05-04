@@ -125,7 +125,7 @@ for col, key in zip([c1, c2, c3], ["dark", "ocean", "white"]):
     with col:
         is_active = st.session_state.theme == key
         if st.button(THEMES[key]["name"], key=f"theme_{key}", 
-                     use_container_width=True,
+                     width="stretch",
                      type="primary" if is_active else "secondary"):
             st.session_state.theme = key
             st.rerun()
@@ -137,7 +137,7 @@ logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.png")
 if os.path.exists(logo_path):
     col1, col2, col3 = st.columns([1, 4, 1])
     with col2:
-        st.image(logo_path, use_container_width=True)
+        st.image(logo_path, width="stretch")
     st.markdown("<br>", unsafe_allow_html=True)
 else:
     st.markdown("""
@@ -169,7 +169,7 @@ if not st.session_state.user:
             with tab_login:
                 email = st.text_input("Email", key="login_email", placeholder="you@example.com")
                 password = st.text_input("Mật khẩu", type="password", key="login_pass", placeholder="••••••••")
-                if st.button("Đăng nhập", type="primary", use_container_width=True):
+                if st.button("Đăng nhập", type="primary", width="stretch"):
                     if email and password:
                         try:
                             result = auth_client.sign_in_with_email_and_password(email, password)
@@ -211,7 +211,7 @@ if not st.session_state.user:
                 r_email = st.text_input("Email", key="reg_email", placeholder="you@example.com")
                 r_pass  = st.text_input("Mật khẩu", type="password", key="reg_pass", placeholder="Tối thiểu 6 ký tự")
                 r_pass2 = st.text_input("Xác nhận mật khẩu", type="password", key="reg_pass2", placeholder="••••••••")
-                if st.button("Tạo tài khoản", type="primary", use_container_width=True):
+                if st.button("Tạo tài khoản", type="primary", width="stretch"):
                     if r_email and r_pass and r_pass2:
                         if r_pass != r_pass2:
                             st.error("Mật khẩu không khớp")
@@ -269,16 +269,16 @@ else:
     # ── Add task form ──
     col_add, col_refresh, col_logout = st.columns([2.2, 1.4, 1.4], gap="small")
     with col_add:
-        if st.button("＋ Thêm task mới", type="primary", use_container_width=True):
+        if st.button("＋ Thêm task mới", type="primary", width="stretch"):
             st.session_state.show_add = not st.session_state.show_add
     with col_refresh:
         st.markdown('<div class="icon-refresh"></div>', unsafe_allow_html=True)
-        if st.button("Làm mới", use_container_width=True, help="Làm mới danh sách"):
+        if st.button("Làm mới", width="stretch", help="Làm mới danh sách"):
             load_tasks()
             st.rerun()
     with col_logout:
         st.markdown('<div class="icon-logout"></div>', unsafe_allow_html=True)
-        if st.button("Đăng xuất", use_container_width=True, help="Đăng xuất"):
+        if st.button("Đăng xuất", width="stretch", help="Đăng xuất"):
             controller.remove('auth_token')
             for k in ["user", "id_token", "tasks", "show_add", "edit_task_id"]:
                 st.session_state[k] = None if k not in ["show_add"] else False
@@ -299,7 +299,7 @@ else:
             deadline_time = st.time_input("Giờ", value=None)
         c1, c2 = st.columns(2)
         with c1:
-            if st.button("Tạo task", type="primary", use_container_width=True):
+            if st.button("Tạo task", type="primary", width="stretch"):
                 if title.strip():
                     payload = {"title": title.strip(), "description": desc.strip(), "priority": priority}
                     if deadline_date:
@@ -318,7 +318,7 @@ else:
                 else:
                     st.warning("Tiêu đề không được để trống")
         with c2:
-            if st.button("Huỷ", use_container_width=True):
+            if st.button("Huỷ", width="stretch"):
                 st.session_state.show_add = False
                 st.rerun()
 
@@ -396,7 +396,7 @@ else:
                 
                 c_save, c_cancel = st.columns(2)
                 with c_save:
-                    if st.button("💾 Lưu", key=f"save_{tid}", type="primary", use_container_width=True):
+                    if st.button("💾 Lưu", key=f"save_{tid}", type="primary", width="stretch"):
                         if edit_title.strip():
                             payload = {
                                 "title": edit_title.strip(),
@@ -421,7 +421,7 @@ else:
                         else:
                             st.warning("Tiêu đề không được để trống")
                 with c_cancel:
-                    if st.button("Huỷ", key=f"cancel_{tid}", use_container_width=True):
+                    if st.button("Huỷ", key=f"cancel_{tid}", width="stretch"):
                         st.session_state.edit_task_id = None
                         st.rerun()
                 continue
@@ -463,7 +463,7 @@ else:
             with c1:
                 label = "Bỏ hoàn thành" if completed else "Đánh dấu xong"
                 st.markdown('<div class="icon-done"></div>', unsafe_allow_html=True)
-                if st.button(label, key=f"done_{tid}", use_container_width=True):
+                if st.button(label, key=f"done_{tid}", width="stretch"):
                     resp = api("patch", f"/tasks/{tid}", json={"completed": not completed})
                     if resp and resp.status_code == 200:
                         for t in st.session_state.tasks:
@@ -472,12 +472,12 @@ else:
                         st.rerun()
             with c2:
                 st.markdown('<div class="icon-edit"></div>', unsafe_allow_html=True)
-                if st.button("Sửa", key=f"edit_{tid}", use_container_width=True):
+                if st.button("Sửa", key=f"edit_{tid}", width="stretch"):
                     st.session_state.edit_task_id = tid
                     st.rerun()
             with c3:
                 st.markdown('<div class="icon-delete"></div>', unsafe_allow_html=True)
-                if st.button("Xoá", key=f"del_{tid}", use_container_width=True):
+                if st.button("Xoá", key=f"del_{tid}", width="stretch"):
                     resp = api("delete", f"/tasks/{tid}")
                     if resp and resp.status_code == 200:
                         st.session_state.tasks = [t for t in st.session_state.tasks if t["id"] != tid]
