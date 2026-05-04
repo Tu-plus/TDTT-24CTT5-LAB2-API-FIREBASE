@@ -44,8 +44,7 @@
 - 📊 Sắp xếp theo: Mức độ ưu tiên / Hạn chót gần nhất
 
 ### Giao diện
-- 🎭 **2 theme màu sắc**: 🌙 Tối (Dark) · 🌊 Biển (Ocean Blue)
-- 🌙 Dark theme hiện đại với hiệu ứng glassmorphism
+- 🌙 **Theme màu sắc**: 🌙 Tối (Dark) · 🌊 Biển (Ocean Blue) · ☀️ Sáng
 - 📈 Dashboard thống kê: Tổng task / Hoàn thành / Còn lại
 - 👤 User badge hiển thị tên và email
 - 🎨 Priority badges với màu sắc phân biệt (🔴 Cao · 🟠 Trung bình · 🟢 Thấp)
@@ -254,6 +253,7 @@ streamlit run app.py
 |:------:|:---------|:-------|:---------|
 | `GET`  | `/`      | Kiểm tra API đang chạy | `{"message": "Todo App API is running"}` |
 | `GET`  | `/health`| Health check | `{"status": "ok"}` |
+| `POST` | `/auth/login` | Đăng nhập lấy `idToken` | `{"idToken": "...", "email": "..."}` |
 
 ### Endpoints xác thực (yêu cầu Bearer token)
 
@@ -266,6 +266,14 @@ streamlit run app.py
 | `DELETE` | `/tasks/{id}`   | Xoá task                         | — |
 
 ### Schemas
+
+**LoginRequest:**
+```json
+{
+  "email": "string (bắt buộc)",
+  "password": "string (bắt buộc)"
+}
+```
 
 **TaskCreate:**
 ```json
@@ -287,6 +295,20 @@ streamlit run app.py
   "deadline": "string ISO date (tuỳ chọn)"
 }
 ```
+
+---
+
+### 🔑 Cách lấy Token để Demo Backend (Swagger UI)
+
+Để test các API yêu cầu xác thực mà không cần dùng giao diện Frontend, bạn có thể lấy token trực tiếp từ Swagger UI:
+
+1. Truy cập **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
+2. Tìm đến endpoint **`POST /auth/login`**.
+3. Nhấn **Try it out** và nhập tài khoản (email/password) đã đăng ký.
+4. Nhấn **Execute**, sau đó copy giá trị của `"idToken"` trong kết quả trả về.
+5. Cuộn lên đầu trang, nhấn nút **Authorize 🔒**.
+6. Dán đoạn token vừa copy vào ô **Value** và nhấn **Authorize**.
+7. Bây giờ bạn có thể thực hiện "Try it out" cho tất cả các API khác (như `/tasks/`) mà không bị lỗi `401 Unauthorized`.
 
 ---
 
@@ -314,6 +336,17 @@ streamlit run app.py
 | `.env.example` | Mẫu biến môi trường (không chứa secret) | ✅ Có |
 
 Hai file Firebase đã được thêm vào `.gitignore`. Chỉ commit các file mẫu (`.env.example`) để người khác biết cấu trúc cần thiết.
+
+---
+
+## 🛠 Giải quyết sự cố (Troubleshooting)
+
+| Lỗi | Nguyên nhân & Cách khắc phục |
+|:---|:---|
+| **`Firebase web config not found`** | Bạn chưa tạo file `firebase-web-config.json` ở thư mục gốc. Xem lại [Bước 5](#bước-5-lấy-web-config-cho-frontend). |
+| **`Invalid or expired token`** | Token của bạn đã hết hạn hoặc sai. Hãy đăng nhập lại trên Frontend hoặc lấy token mới từ `/auth/login`. |
+| **`Address already in use`** | Port 8000 (Backend) hoặc 8501 (Frontend) đã bị ứng dụng khác chiếm. Dùng lệnh `taskkill /F /IM python.exe` (Windows) để tắt các tiến trình cũ. |
+| **Lỗi Google Login** | Đảm bảo bạn đã bật phương thức Google trong Firebase Console và kiểm tra `authDomain` trong file config. |
 
 ---
 

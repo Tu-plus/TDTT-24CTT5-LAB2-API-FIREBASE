@@ -1,7 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from routers import auth, tasks
-from fastapi.responses import JSONResponse
 
 
 app = FastAPI(title="Todo App API", version="1.0.0")
@@ -30,5 +29,5 @@ def health():
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return JSONResponse(content={"message": "No favicon"}, status_code=204)
+    return Response(status_code=204)
 
